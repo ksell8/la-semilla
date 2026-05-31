@@ -1,0 +1,15 @@
+---
+# Usage: ansible-playbook -i inventory.ini site.yml
+
+- name: La Semilla Setup
+  hosts: semilla
+  become: true
+  vars_files:
+    - vars/local_vars.yml
+    - vars/vault.yml
+
+  roles:
+    - common
+    - networking
+    - bluetooth
+    - nginx

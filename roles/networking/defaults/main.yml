@@ -1,0 +1,8 @@
+---
+hotspot_ssid: disturb
+hotspot_channel: 7
+hotspot_ip: 192.168.4.1
+hotspot_dhcp_start: 192.168.4.2
+hotspot_dhcp_end: 192.168.4.150
+hotspot_lease_time: 1h
+hostname: cafebabe

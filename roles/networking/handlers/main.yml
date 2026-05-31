@@ -1,0 +1,8 @@
+---
+- name: activate hotspot connection
+  command: nmcli connection up la-semilla-hotspot
+
+- name: restart dnsmasq
+  systemd:
+    name: dnsmasq
+    state: restarted

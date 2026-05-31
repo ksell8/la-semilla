@@ -1,0 +1,10 @@
+# La Semilla - dnsmasq config
+# Managed by Ansible - do not edit manually
+
+interface=wlan0
+dhcp-range={{ hotspot_dhcp_start }},{{ hotspot_dhcp_end }},255.255.255.0,{{ hotspot_lease_time }}
+domain=local
+address=/{{ hostname }}.local/{{ hotspot_ip }}
+dhcp-leasefile=/dev/null
+leasefile-ro
+log-queries=off

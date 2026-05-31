@@ -1,0 +1,14 @@
+---
+
+hotspot_ssid: disturb
+hotspot_channel: 7
+hotspot_ip: 192.168.4.1
+hotspot_dhcp_start: 192.168.4.2
+hotspot_dhcp_end: 192.168.4.20
+hotspot_lease_time: 24h
+hostname: cafebabe
+
+beacon_namespace: "6469737475724274a865"
+beacon_instance: "737461747573"
+beacon_tx_power: -59
+beacon_name: disturb

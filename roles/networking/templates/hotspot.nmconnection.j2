@@ -1,0 +1,19 @@
+[connection]
+id=la-semilla-hotspot
+type=wifi
+interface-name=wlan0
+
+[wifi]
+mode=ap
+ssid={{ hotspot_ssid }}
+
+[wifi-security]
+key-mgmt=wpa-psk
+psk={{ hotspot_password }}
+
+[ipv4]
+method=manual
+addresses={{ hotspot_ip }}/24
+
+[ipv6]
+method=disabled
