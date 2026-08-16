@@ -1,0 +1,5 @@
+[Service]
+# Ollama defaults to binding 127.0.0.1:11434, which is unreachable from inside
+# the aiwebui docker container. Bind all interfaces so the container can reach
+# it via host.docker.internal (host-gateway).
+Environment="OLLAMA_HOST=0.0.0.0"

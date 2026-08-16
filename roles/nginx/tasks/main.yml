@@ -1,6 +1,6 @@
 ---
 - name: Create local certs directory
-  file:
+  ansible.builtin.file:
     path: "{{ playbook_dir }}/certs"
     state: directory
     mode: '0700'
@@ -8,7 +8,7 @@
   become: false
 
 - name: Check if CA cert exists and is valid
-  command: openssl x509 -checkend 0 -noout -in "{{ playbook_dir }}/certs/ca.crt"
+  ansible.builtin.command: openssl x509 -checkend 0 -noout -in "{{ playbook_dir }}/certs/ca.crt"
   delegate_to: localhost
   become: false
   register: ca_valid
@@ -16,13 +16,13 @@
   changed_when: false
 
 - name: Generate CA key
-  command: openssl genrsa -out "{{ playbook_dir }}/certs/ca.key" 4096
+  ansible.builtin.command: openssl genrsa -out "{{ playbook_dir }}/certs/ca.key" 4096
   delegate_to: localhost
   become: false
   when: ca_valid.rc != 0
 
 - name: Generate CA cert
-  command: >
+  ansible.builtin.command: >
     openssl req -new -x509 -days 3650
     -key "{{ playbook_dir }}/certs/ca.key"
     -out "{{ playbook_dir }}/certs/ca.crt"
@@ -32,7 +32,7 @@
   when: ca_valid.rc != 0
 
 - name: Check if server cert exists and is valid
-  command: openssl x509 -checkend 0 -noout -in "{{ playbook_dir }}/certs/server.crt"
+  ansible.builtin.command: openssl x509 -checkend 0 -noout -in "{{ playbook_dir }}/certs/server.crt"
   delegate_to: localhost
   become: false
   register: server_cert_valid
@@ -40,13 +40,13 @@
   changed_when: false
 
 - name: Generate server key
-  command: openssl genrsa -out "{{ playbook_dir }}/certs/server.key" 2048
+  ansible.builtin.command: openssl genrsa -out "{{ playbook_dir }}/certs/server.key" 2048
   delegate_to: localhost
   become: false
   when: server_cert_valid.rc != 0
 
 - name: Generate server CSR
-  command: >
+  ansible.builtin.command: >
     openssl req -new
     -key "{{ playbook_dir }}/certs/server.key"
     -out "{{ playbook_dir }}/certs/server.csr"
@@ -56,7 +56,7 @@
   when: server_cert_valid.rc != 0
 
 - name: Write SAN extension file
-  copy:
+  ansible.builtin.copy:
     content: "subjectAltName=DNS:{{ hostname }}"
     dest: "{{ playbook_dir }}/certs/server.ext"
   delegate_to: localhost
@@ -64,7 +64,7 @@
   when: server_cert_valid.rc != 0
 
 - name: Sign server cert with CA
-  command: >
+  ansible.builtin.command: >
     openssl x509 -req -days 3650
     -in "{{ playbook_dir }}/certs/server.csr"
     -CA "{{ playbook_dir }}/certs/ca.crt"
@@ -77,12 +77,12 @@
   when: server_cert_valid.rc != 0
 
 - name: Install nginx
-  apt:
+  ansible.builtin.apt:
     name: nginx
     state: present
 
 - name: Create nginx ssl directory
-  file:
+  ansible.builtin.file:
     path: /etc/nginx/ssl
     state: directory
     owner: root
@@ -90,7 +90,7 @@
     mode: '0700'
 
 - name: Copy server cert to Pi
-  copy:
+  ansible.builtin.copy:
     src: "{{ playbook_dir }}/certs/server.crt"
     dest: /etc/nginx/ssl/server.crt
     owner: root
@@ -99,7 +99,7 @@
   notify: reload nginx
 
 - name: Copy server key to Pi
-  copy:
+  ansible.builtin.copy:
     src: "{{ playbook_dir }}/certs/server.key"
     dest: /etc/nginx/ssl/server.key
     owner: root
@@ -108,15 +108,20 @@
   notify: reload nginx
 
 - name: Copy biblioteca app
-  copy:
+  ansible.builtin.copy:
     src: "{{ playbook_dir }}/apps/biblioteca/"
     dest: /var/www/biblioteca/
     owner: www-data
     group: www-data
     mode: '0644'
 
+- name: Setup Ollama app
+  ansible.builtin.include_role:
+    name: ollama
+  when: enable_ai
+
 - name: Deploy biblioteca nginx config
-  template:
+  ansible.builtin.template:
     src: biblioteca.conf.j2
     dest: /etc/nginx/sites-available/biblioteca
     owner: root
@@ -125,20 +130,37 @@
   notify: reload nginx
 
 - name: Enable biblioteca site
-  file:
+  ansible.builtin.file:
     src: /etc/nginx/sites-available/biblioteca
     dest: /etc/nginx/sites-enabled/biblioteca
     state: link
   notify: reload nginx
 
+- name: Deploy aiwebui nginx config
+  ansible.builtin.template:
+    src: aiwebui.conf.j2
+    dest: /etc/nginx/sites-available/aiwebui
+    owner: root
+    group: root
+    mode: '0644'
+  notify: reload nginx
+  when: enable_ai
+
+- name: Enable aiwebui site
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/aiwebui
+    dest: /etc/nginx/sites-enabled/aiwebui
+    state: link
+  notify: reload nginx
+  when: enable_ai
+
 - name: Remove default nginx site
-  file:
+  ansible.builtin.file:
     path: /etc/nginx/sites-enabled/default
     state: absent
-  notify: reload nginx
 
 - name: Enable and start nginx
-  systemd:
+  ansible.builtin.systemd_service:
     name: nginx
     enabled: true
     state: started

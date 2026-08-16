@@ -1,0 +1,18 @@
+---
+# other machines might need the docker remote to be added, not raspios
+- name: Install docker.io
+  ansible.builtin.apt:
+    name:
+      - docker.io
+    state: present
+
+- name: Ensure group docker exists
+  ansible.builtin.group:
+    name: docker
+    state: present
+
+- name: Add user to docker group
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    groups: docker
+    append: true

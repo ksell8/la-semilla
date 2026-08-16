@@ -1,4 +1,7 @@
 ---
-- name: reload systemd
-  systemd:
+- name: Start ble-beacon
+  ansible.builtin.systemd:
+    name: ble-beacon
+    enabled: true
+    state: started
     daemon_reload: true

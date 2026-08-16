@@ -1,0 +1,18 @@
+[Unit]
+Description=Ollama WebUI
+After=docker.service
+Requires=docker.service
+After=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=-/usr/bin/docker rm -f open-webui
+# TODO: Figure out how to run this correctly so that OLLAMA_BASE_URL is switched
+# Also, would be good to figure out if there's a way to turn off built-in tools for the models.  May be on the ollama side
+ExecStart=/usr/bin/docker run -d -p 127.0.0.1:3000:8080 --add-host=host.docker.internal:host-gateway -e OLLAMA_BASE_URL=http://host.docker.internal:11434 -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:ollama
+ExecStop=/usr/bin/docker stop open-webui
+User=root
+
+[Install]
+WantedBy=default.target

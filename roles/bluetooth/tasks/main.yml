@@ -1,13 +1,13 @@
 ---
 - name: Copy heraldo source to Pi
-  copy:
+  ansible.builtin.copy:
     src: "{{ playbook_dir }}/apps/heraldo/"
     dest: /opt/heraldo/
     owner: root
     group: root
 
 - name: Deploy heraldo wrapper script
-  template:
+  ansible.builtin.template:
     src: heraldo.j2
     dest: /usr/local/bin/heraldo
     owner: root
@@ -15,18 +15,10 @@
     mode: '0755'
 
 - name: Deploy BLE beacon systemd service
-  template:
+  ansible.builtin.template:
     src: ble-beacon.service.j2
     dest: /etc/systemd/system/ble-beacon.service
     owner: root
     group: root
     mode: '0644'
-  notify: reload systemd
-
-- name: Enable and start BLE beacon
-  systemd:
-    name: ble-beacon
-    enabled: true
-    state: started
-    daemon_reload: true
-  when: bluetooth_enabled
+  notify: Start ble-beacon
