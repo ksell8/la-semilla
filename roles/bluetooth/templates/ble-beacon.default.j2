@@ -1,0 +1,3 @@
+# {{ ansible_managed }}
+# Arguments passed to heraldo by the ble-beacon service (heraldo's ble-beacon package).
+HERALDO_ARGS="eddystone-uid --ad-type broadcast --namespace {{ beacon_namespace }} --instance {{ beacon_instance }}{% if beacon_name is defined and beacon_name %} --name {{ beacon_name }}{% endif %} --tx-power {{ beacon_tx_power | default(-59) }}"

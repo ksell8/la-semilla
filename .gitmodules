@@ -1,3 +1,0 @@
-[submodule "apps/heraldo"]
-	path = apps/heraldo
-	url = git@github.com:ksell8/heraldo.git

@@ -1,24 +1,67 @@
 ---
-- name: Copy heraldo source to Pi
-  ansible.builtin.copy:
-    src: "{{ playbook_dir }}/apps/heraldo/"
-    dest: /opt/heraldo/
-    owner: root
-    group: root
+# heraldo and the ble-beacon service come from heraldo's signed Debian
+# packages (GitHub release assets) instead of a copy of the source.
 
-- name: Deploy heraldo wrapper script
-  ansible.builtin.template:
-    src: heraldo.j2
-    dest: /usr/local/bin/heraldo
+- name: Remove the old source-installed heraldo and ble-beacon unit
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    # This unit would override the one the ble-beacon package installs.
+    - /etc/systemd/system/ble-beacon.service
+    # This wrapper would shadow the package's /usr/bin/heraldo on PATH.
+    - /usr/local/bin/heraldo
+    - /opt/heraldo
+  notify: Restart ble-beacon
+
+- name: Look up the heraldo release
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/{{ heraldo_repo }}/releases/{{ 'latest' if heraldo_release == 'latest' else 'tags/' ~ heraldo_release }}"
+    headers:
+      Accept: application/vnd.github+json
+  register: heraldo_release_info
+
+- name: Pick the heraldo and ble-beacon packages for this machine
+  vars:
+    deb_arch: "{{ {'aarch64': 'arm64', 'x86_64': 'amd64', 'armv7l': 'armhf'}.get(ansible_architecture, ansible_architecture) }}"
+    assets: "{{ heraldo_release_info.json.assets }}"
+  ansible.builtin.set_fact:
+    heraldo_debs:
+      - "{{ assets | selectattr('name', 'match', '^heraldo_.*_' ~ deb_arch ~ '\\.deb$') | first }}"
+      - "{{ assets | selectattr('name', 'match', '^ble-beacon_.*_all\\.deb$') | first }}"
+
+- name: Create the package download directory
+  ansible.builtin.file:
+    path: /var/cache/heraldo
+    state: directory
     owner: root
     group: root
     mode: '0755'
 
-- name: Deploy BLE beacon systemd service
-  ansible.builtin.template:
-    src: ble-beacon.service.j2
-    dest: /etc/systemd/system/ble-beacon.service
+- name: Download the heraldo and ble-beacon packages
+  ansible.builtin.get_url:
+    url: "{{ item.browser_download_url }}"
+    dest: "/var/cache/heraldo/{{ item.name }}"
     owner: root
     group: root
     mode: '0644'
-  notify: Start ble-beacon
+  loop: "{{ heraldo_debs }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+# One at a time: ble-beacon depends on heraldo.
+- name: Install the heraldo and ble-beacon packages
+  ansible.builtin.apt:
+    deb: "/var/cache/heraldo/{{ item.name }}"
+  loop: "{{ heraldo_debs }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Configure the BLE beacon
+  ansible.builtin.template:
+    src: ble-beacon.default.j2
+    dest: /etc/default/ble-beacon
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart ble-beacon
