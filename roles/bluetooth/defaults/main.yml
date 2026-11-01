@@ -1,2 +1,7 @@
 ---
 beacon_name: disturb
+
+# heraldo release to install the heraldo and ble-beacon .debs from:
+# "latest" or a tag such as "v1.0.0" (https://github.com/ksell8/heraldo/releases).
+heraldo_release: latest
+heraldo_repo: ksell8/heraldo

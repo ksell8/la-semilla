@@ -8,13 +8,7 @@ Debian based OS for now.  Meant to run on a minimal chipset.
 
 ## Setup
 
-### 1. Pull embedded apps
-
-```bash
-git submodule update --init --recursive
-```
-
-### 2. Configure variables
+### 1. Configure variables
 
 Edit `vars/local_vars.yml` to override defaults:
 
@@ -28,7 +22,7 @@ beacon_major: 1
 beacon_minor: 1
 ```
 
-### 3. Configure secrets
+### 2. Configure secrets
 
 Edit `vars/vault.yml` with your passwords, then encrypt it:
 
@@ -53,6 +47,10 @@ ansible-playbook -i inventory.ini site.yml --tags networking --ask-vault-pass
 # Run only bluetooth
 ansible-playbook -i inventory.ini site.yml --tags bluetooth --ask-vault-pass
 ```
+
+## BLE beacon
+
+The `bluetooth` role installs [heraldo](https://github.com/ksell8/heraldo) and its `ble-beacon` service from the signed `.deb`s on heraldo's [releases](https://github.com/ksell8/heraldo/releases) (the latest release by default; set `heraldo_release: v1.0.0` to pin one), then writes the beacon settings (`beacon_namespace`, `beacon_instance`, `beacon_name`, `beacon_tx_power`) to `/etc/default/ble-beacon`. The Pi needs internet access to GitHub for this, and the release needs a `.deb` for the Pi's architecture and Debian release.
 
 ## AI Agent
 
